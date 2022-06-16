@@ -18,4 +18,4 @@ api.add_resource(Uploader, '/upload')
 if __name__ == '__main__':
 
     # Start the app
-    flask_app.run(host='0.0.0.0', port='5000')
+    flask_app.run(host='0.0.0.0', port='5000', debug=True)

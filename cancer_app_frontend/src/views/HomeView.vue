@@ -1,15 +1,21 @@
 <template>
-  <hello-world />
+  <v-container fill-height>
+    <v-row>
+      <v-col class="d-flex justify-center">
+        <ImageUploadContainer />
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
-  import HelloWorld from '../components/HelloWorld'
+  import ImageUploadContainer from '@/components/ImageUploadContainer'
 
   export default {
     name: 'HomeView',
 
     components: {
-      HelloWorld,
-    },
+      ImageUploadContainer,
+    }
   }
 </script>
