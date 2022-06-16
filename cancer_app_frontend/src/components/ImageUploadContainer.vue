@@ -4,7 +4,7 @@
         label-idle="Drop images here or <span class='filepond--label-action'>Browse</span>"
         allow-multiple="true"
         accepted-file-types="image/jpeg, image/png"
-        max-files="10"
+        max-files="1"
         server="/backend/upload"
         v-bind:files="imagesToUpload"
         />

@@ -79,7 +79,7 @@ def processIMG(i):
     stroma = 0
 
     for a in range(len(list_img)):
-        # Preprocessing of an images
+        # Preprocessing
         img_ori = list_img[a]
         img = cv2.cvtColor(img_ori, cv2.COLOR_BGR2RGB)
 
@@ -118,7 +118,7 @@ def processIMG(i):
     print("low: " + str(low))
     print("stroma: " + str(stroma))
 
-    cv2.imwrite(imagePath+"_result.png", img2)
+    cv2.imwrite(imagePath + "_result.png", img2)
 
 
 for i in tqdm(range(len(allFiles))):

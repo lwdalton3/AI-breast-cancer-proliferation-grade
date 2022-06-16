@@ -2,4 +2,6 @@
 *.pyc
 *.DS_Store
 *.h5
-python/backend/images
+*.png
+*.jpg
+*.jpeg
