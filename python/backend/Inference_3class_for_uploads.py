@@ -10,12 +10,12 @@
 ## if no work may have to sudo pkill -9  in terminal
 
 from tensorflow.keras.models import load_model
-import pandas as pd 
-import numpy as np 
-import os 
-import cv2 
+import pandas as pd
+import numpy as np
+import os
+import cv2
 from tqdm import tqdm
-import shutil 
+import shutil
 from statistics import mean, median, median_high
 
 
@@ -33,11 +33,11 @@ biasToHighClass = 0 #Enter a value between 0 and 1. 0 means, no bias and 1 means
 
 imageSize = 224 # Set Images size corresponding to the model
 
-testFolder= "test" # Folder contains images that you would like to test
+testFolder= "images" # Folder contains images that you would like to test
 
 outputDir = "test_results"   # will place copy of image in folder according to classification
 
-classNames = ["high","low","stroma"]             # Write the three class that were used in alphabetical order 
+classNames = ["high","low","stroma"]             # Write the three class that were used in alphabetical order
 
 #===Inputs===#
 
@@ -53,7 +53,7 @@ print("Loaded file names")
 def processIMG(i):
     global df
     global allFiles
-    
+
     imagePath = allFiles[i]
     img2 = cv2.imread(imagePath)
     y, x, z = img2.shape
@@ -74,22 +74,22 @@ def processIMG(i):
             current_y+=250
         list_img.append(img_crop)
     #===Cropping images into (250, 250) tiles===#
-      
+
     if img2 is None: #Image is None
         return 0
     high = 0
     low = 0
-    stroma = 0 
+    stroma = 0
     for a in range(len(list_img)):
         #===Preprocessing of an images===#
         img_ori = list_img[a]
         img = cv2.cvtColor(img_ori, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (imageSize,imageSize), interpolation = cv2.INTER_AREA) #Resize Image 
+        img = cv2.resize(img, (imageSize,imageSize), interpolation = cv2.INTER_AREA) #Resize Image
         img = img/255 #Normalize image
         img = img.reshape(1,img.shape[0],img.shape[1],3)
         #===Preprocessing of an images===#
 
-        predict = model.predict(img) 
+        predict = model.predict(img)
         predict[0][0] -= biasToHighClass #Add high class bias
 
         #===Get Predictions of tiles==#
@@ -110,25 +110,10 @@ def processIMG(i):
     #===Print out results for each images===#
 
     #===Show the results images with rectangles for each images===#
-    cv2.imshow(imagePath, img2)
+    #  cv2.imshow(imagePath, img2)
     cv2.imwrite(imagePath+"_result.png", img2)
-    cv2.waitKey()
+    #  cv2.waitKey()
     #===Show the results images with rectangles for each images===#
 
 for i in tqdm(range(len(allFiles))):
     processIMG(i)
-    
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
