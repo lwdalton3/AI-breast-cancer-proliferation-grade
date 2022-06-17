@@ -1,0 +1,19 @@
+services:
+  nginx_prod:
+      build:
+        context: ./nginx
+        dockerfile: Dockerfile.prod
+      volumes:
+          # Build of UI for controlling Robi
+          - ./cancer_app_frontend/dist:/dist
+      ports:
+          - "80:80"
+          - "443:443"
+      depends_on:
+          - "python_prod"
+
+  python_prod:
+      build:
+          context: ./python
+      volumes:
+          - ./python/backend:/backend
