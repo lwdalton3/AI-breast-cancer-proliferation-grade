@@ -107,13 +107,13 @@
 
       checkIfRecogDone() {
 
-        fetch('http://localhost/backend/prediction')
+        fetch('/backend/prediction')
           .then(response => response.json())
           .then(data => {
             if (data.status === 'Prediction complete.') {
               clearTimeout(this.checkIfRecogDoneTimer)
               this.predictionData = data.data
-              fetch('http://localhost/backend/download')
+              fetch('/backend/download')
                 .then(response => response.blob())
                 .then(imageBlob => {
                   // Then create a local URL for that image and print it
