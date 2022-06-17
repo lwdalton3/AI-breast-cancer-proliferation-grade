@@ -1,7 +1,8 @@
-import os
+from threading import Thread
 import cv2
 import werkzeug
 import tensorflow as tf
+from flask import send_file
 from tensorflow.keras.models import load_model
 from flask_restful import Resource, reqparse
 
@@ -34,6 +35,12 @@ outputDir = "test_results"
 classNames = ["high", "low", "stroma"]
 
 model = load_model(modelPath)
+
+threads = []
+
+high = 0
+low = 0
+stroma = 0
 
 
 def predict(image):
@@ -68,6 +75,10 @@ def predict(image):
 
     if img2 is None:
         return 0
+
+    global high
+    global low
+    global stroma
 
     high = 0
     low = 0
@@ -123,8 +134,23 @@ class Uploader(Resource):
         image_file = args['filepond']
         image_file.save('temp_image.jpg')
 
-        predict('temp_image.jpg')
+        threads.append(Thread(target=predict, args=('temp_image.jpg',)))
+        threads[-1].start()
 
         # Return result of prediction
+        return {'status': 'Prediction started'}
 
-        return {'result': 'werks'}
+
+class PredictionStatus(Resource):
+    def get(self):
+        # Check if thread has finished
+        if threads[-1].is_alive():
+            return {'status': 'Thread still running.'}
+        else:
+            return {'status': 'Prediction complete.',
+                    'data': {'high': high, 'low': low, 'stroma': stroma}}
+
+
+class DownloadImage(Resource):
+    def get(self):
+        return send_file('result.png', mimetype='image/gif')

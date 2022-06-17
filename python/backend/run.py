@@ -4,7 +4,7 @@ Entrypoint for the backend.
 
 from flask import Flask
 from flask_restful import Api
-from endpoints import Uploader
+from endpoints import Uploader, PredictionStatus, DownloadImage
 
 flask_app = Flask(__name__)
 
@@ -13,6 +13,8 @@ api = Api(flask_app)
 
 # Handles file uploads
 api.add_resource(Uploader, '/upload')
+api.add_resource(PredictionStatus, '/prediction')
+api.add_resource(DownloadImage, '/download')
 
 
 if __name__ == '__main__':
