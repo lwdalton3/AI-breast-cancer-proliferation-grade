@@ -10,6 +10,8 @@ pyflakes = "*"
 flake8 = "*"
 tensorflow-macos = "*"
 opencv-python = "*"
+tqdm = "*"
+pandas = "*"
 
 [dev-packages]
 
