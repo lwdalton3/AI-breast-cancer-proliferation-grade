@@ -8,6 +8,8 @@ ipython = "*"
 flask = "*"
 pyflakes = "*"
 flake8 = "*"
+tensorflow-macos = "*"
+opencv-python = "*"
 
 [dev-packages]
 
