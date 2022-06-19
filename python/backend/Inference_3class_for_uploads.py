@@ -25,12 +25,6 @@ imageSize = 224
 # Folder contains images that you would like to test
 testFolder = "images"
 
-# Will place copy of image in folder according to classification
-outputDir = "test_results"
-
-# Write the three class that were used in alphabetical order
-classNames = ["high", "low", "stroma"]
-
 model = load_model(modelPath)
 
 allFiles = []
