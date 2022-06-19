@@ -2,6 +2,7 @@ from threading import Thread
 import cv2
 import werkzeug
 import tensorflow as tf
+import numpy as np
 from flask import send_file
 from tensorflow.keras.models import load_model
 from flask_restful import Resource, reqparse
@@ -84,6 +85,11 @@ def predict(image):
     low = 0
     stroma = 0
 
+    # Colors for highlighting tiles after classification
+    stroma_highlight = np.array([0, 255, 0])[::-1]
+    high_highlight = np.array([255, 0, 0])[::-1]
+    low_highlight = np.array([0, 0, 255])[::-1]
+
     for a in range(len(list_img)):
         # Preprocessing
         img_ori = list_img[a]
@@ -102,21 +108,35 @@ def predict(image):
         # Add high class bias
         predict[0][0] -= biasToHighClass
 
+        rect_for_blending = np.ones(img_ori.shape, dtype=np.uint8)
+
         # Get predictions of tiles
         # Return predictions of High
         if predict[0][0] > 0.5:
             high += 1
 
-            # If high draw black rectangle
-            cv2.rectangle(img2, start_point[a], end_point[a], (0, 0, 0), 2)
+            rect_for_blending = (rect_for_blending*high_highlight).astype(
+                np.uint8)
+            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            img_ori[:] = res
 
         # Return predictions of Low
         elif predict[0][1] > 0.5:
             low += 1
 
+            rect_for_blending = (rect_for_blending*low_highlight).astype(
+                np.uint8)
+            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            img_ori[:] = res
+
         # Return predictions of Stroma
         elif predict[0][2] > 0.5:
             stroma += 1
+
+            rect_for_blending = (rect_for_blending*stroma_highlight).astype(
+                np.uint8)
+            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            img_ori[:] = res
 
     cv2.imwrite('result.png', img2)
 

@@ -1,6 +1,7 @@
 import os
 import cv2
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras.models import load_model
 from tqdm import tqdm
 
@@ -35,11 +36,10 @@ for dirname, _, filenames in os.walk(testFolder):
         allFiles.append(os.path.join(dirname, filename))
 
 
-def processIMG(i):
+def processIMG(imagePath):
     global df
     global allFiles
 
-    imagePath = allFiles[i]
     img2 = cv2.imread(imagePath)
     y, x, z = img2.shape
     current_x = 0
@@ -65,8 +65,13 @@ def processIMG(i):
             current_y += 250
         list_img.append(img_crop)
 
-    if img2 is None:
-        return 0
+    # Colors for highlighting tiles after classification
+    #  low_highlight = np.array([230, 229, 241])[::-1]
+    #  high_highlight = np.array([230, 214, 213])[::-1]
+    #  stroma_highlight = np.array([229, 238, 226])[::-1]
+    low_highlight = np.array([0, 255, 0])[::-1]
+    high_highlight = np.array([255, 0, 0])[::-1]
+    stroma_highlight = np.array([0, 0, 255])[::-1]
 
     high = 0
     low = 0
@@ -90,30 +95,39 @@ def processIMG(i):
         # Add high class bias
         predict[0][0] -= biasToHighClass
 
+        rect_for_blending = np.ones(img_ori.shape, dtype=np.uint8)
+
         # Get predictions of tiles
         # Return predictions of High
         if predict[0][0] > 0.5:
             high += 1
 
-            # If high draw black rectangle
-            cv2.rectangle(img2, start_point[a], end_point[a], (0, 0, 0), 2)
+            rect_for_blending = (rect_for_blending*high_highlight).astype(
+                np.uint8)
+            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            img_ori[:] = res
 
         # Return predictions of Low
         elif predict[0][1] > 0.5:
             low += 1
 
+            rect_for_blending = (rect_for_blending*low_highlight).astype(
+                np.uint8)
+            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            img_ori[:] = res
+
         # Return predictions of Stroma
         elif predict[0][2] > 0.5:
             stroma += 1
 
+            rect_for_blending = (rect_for_blending*stroma_highlight).astype(
+                np.uint8)
+            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            img_ori[:] = res
+
     # Print out results for each images
-    print(filename + ": ")
     print("high: " + str(high))
     print("low: " + str(low))
     print("stroma: " + str(stroma))
 
     cv2.imwrite(imagePath + "_result.png", img2)
-
-
-for i in tqdm(range(len(allFiles))):
-    processIMG(i)
