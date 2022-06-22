@@ -16,7 +16,7 @@ except:
     # Invalid device or cannot modify virtual devices once initialized.
     pass
 
-modelPath = "ResNet101V2_TCGA_orig_train.h5"
+modelPath = './models/VGG19_CHTN_train_images_may_day.h5'
 
 # Enter a value between 0 and 1. 0 means, no bias and 1 means, 100% of the time
 # high class is predicted. You can try a value in between, if you want like
@@ -25,15 +25,6 @@ biasToHighClass = 0
 
 # Set Images size corresponding to the model
 imageSize = 224
-
-# Folder contains images that you would like to test
-testFolder = "images"
-
-# Will place copy of image in folder according to classification
-outputDir = "test_results"
-
-# Write the three class that were used in alphabetical order
-classNames = ["high", "low", "stroma"]
 
 model = load_model(modelPath)
 
