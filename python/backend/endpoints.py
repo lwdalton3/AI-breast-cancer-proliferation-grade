@@ -29,6 +29,7 @@ imageSize = 224
 model = load_model(modelPath)
 
 threads = []
+labels = ['HIGH', 'LOW', 'STROMA']
 
 high = 0
 low = 0
@@ -77,9 +78,9 @@ def predict(image):
     stroma = 0
 
     # Colors for highlighting tiles after classification
-    stroma_highlight = np.array([0, 255, 0])[::-1]
-    high_highlight = np.array([255, 0, 0])[::-1]
-    low_highlight = np.array([0, 0, 255])[::-1]
+    scale = 0.7
+    high_highlight = np.array([255, 0, 0])[::-1]*scale
+    low_stroma_highlight = np.array([0, 0, 255])[::-1]*scale
 
     for a in range(len(list_img)):
         # Preprocessing
@@ -103,30 +104,36 @@ def predict(image):
 
         # Get predictions of tiles
         # Return predictions of High
-        if predict[0][0] > 0.5:
+        label = labels[predict.argmax()]
+        confidence = predict.max()
+
+        # Map confidence to exp scale so that the coloring differene is more
+        # drastic
+        confidence = (np.exp(confidence) - 1)/(np.e - 1)
+        if label == 'HIGH':
             high += 1
 
-            rect_for_blending = (rect_for_blending*high_highlight).astype(
-                np.uint8)
-            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            rect_for_blending = (rect_for_blending*high_highlight*confidence
+                                 ).astype(np.uint8)
+            res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5, 1.0)
             img_ori[:] = res
 
         # Return predictions of Low
-        elif predict[0][1] > 0.5:
+        elif label == 'LOW':
             low += 1
 
-            rect_for_blending = (rect_for_blending*low_highlight).astype(
-                np.uint8)
-            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            rect_for_blending = (rect_for_blending*low_stroma_highlight*confidence
+                                 ).astype(np.uint8)
+            res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5, 1.0)
             img_ori[:] = res
 
         # Return predictions of Stroma
-        elif predict[0][2] > 0.5:
+        elif label == 'STROMA':
             stroma += 1
 
-            rect_for_blending = (rect_for_blending*stroma_highlight).astype(
-                np.uint8)
-            res = cv2.addWeighted(img_ori, 0.5, rect_for_blending, 0.5, 1.0)
+            rect_for_blending = (rect_for_blending*low_stroma_highlight*confidence
+                                 ).astype(np.uint8)
+            res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5, 1.0)
             img_ori[:] = res
 
     cv2.imwrite('result.png', img2)
