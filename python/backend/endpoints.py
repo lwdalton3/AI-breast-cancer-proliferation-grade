@@ -29,7 +29,6 @@ imageSize = 224
 model = load_model(modelPath)
 
 threads = []
-labels = ['HIGH', 'LOW', 'STROMA']
 
 high = 0
 low = 0
@@ -45,6 +44,7 @@ def predict(image):
     y, x, z = img2.shape
     current_x = 0
     current_y = 0
+    labels = ['HIGH', 'LOW', 'STROMA']
 
     # List of tiles
     list_img = []
@@ -65,9 +65,6 @@ def predict(image):
             current_x = 0
             current_y += 250
         list_img.append(img_crop)
-
-    if img2 is None:
-        return 0
 
     global high
     global low
