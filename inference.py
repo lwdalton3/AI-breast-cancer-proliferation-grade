@@ -199,12 +199,12 @@ if __name__ == '__main__':
     model = load_model(model_path)
 
     # Analyse single image (with custom output dir)
-    predict('./sample_data/ska.jpg', model, output_dir='./output')
+    predict('/home/ldalton/test/ska.jpg', model, output_dir='./output')
 
     # Can also be used with directory of images
-    dir_name = './sample_data'
-    images = [os.path.join(dir_name, image_name) for image_name in
-              os.listdir(dir_name)]
+    #  dir_name = './sample_data'
+    #  images = [os.path.join(dir_name, image_name) for image_name in
+              #  os.listdir(dir_name)]
 
-    for image_name in images:
-        predict(image_name, model)
+    #  for image_name in images:
+        #  predict(image_name, model)
