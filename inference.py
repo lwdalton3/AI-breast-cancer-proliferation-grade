@@ -24,7 +24,7 @@ except:
     pass
 
 
-def predict(image_name, model, bias_to_high_class=0, image_size=224,
+def predict(input_path, model, bias_to_high_class=0, image_size=224,
             output_dir=None):
     """
     Predicts on a single image with name `image_name` and stores the results in
@@ -52,144 +52,158 @@ def predict(image_name, model, bias_to_high_class=0, image_size=224,
             image.
     """
 
-    img2 = cv2.imread(image_name)
-    y, x, z = img2.shape
-    current_x = 0
-    current_y = 0
-    labels = ['HIGH', 'LOW', 'STROMA']
-
-    # List of tiles
-    list_img = []
-
-    # List of starting points of tiles
-    start_point = []
-
-    # List of ending points of tiles
-    end_point = []
-
-    # Used for counting image segments per class
-    high = 0
-    low = 0
-    stroma = 0
-
-    # Colors for highlighting tiles after classification
-    scale = 0.7
-    high_highlight = np.array([255, 0, 0])[::-1]*scale
-    low_stroma_highlight = np.array([0, 0, 255])[::-1]*scale
-
-    # Make directory structure for output
-    save_name = os.path.splitext(os.path.basename(image_name))[0]
-    image_path_no_prefix = os.path.splitext(image_name)[0]
-    if output_dir:
-        output_path = os.path.join(output_dir, f'{save_name}_results')
+    # Check whether we're processing a directory of images or a single image
+    if os.path.isdir(input_path):
+        folder_content = os.listdir(input_path)
+        image_names = [os.path.join(input_path, image_name) for image_name in
+                       folder_content]
     else:
-        output_path = os.path.join(f'{image_path_no_prefix}_results')
-
-    if os.path.exists(output_path):
-        if os.path.isdir(output_path):
-            shutil.rmtree(output_path)
-        else:
-            os.remove(output_path)
-
-    os.makedirs(output_path)
-
-    # Add class folders
-    os.makedirs(os.path.join(output_path, 'high'))
-    os.makedirs(os.path.join(output_path, 'low'))
-    os.makedirs(os.path.join(output_path, 'stroma'))
+        image_names = [input_path]
 
     # Output TSV
     df = pd.DataFrame(columns=['ID', 'confidence', 'prediction',
                                'high_confidence', 'low_confidence',
                                'stroma_confidence'])
 
-    # Cropping images into (250, 250) tiles
-    while current_x + 250 <= x and current_y + 250 <= y:
-        img_crop = img2[current_y:current_y + 250, current_x:current_x + 250]
-        start_point.append((current_y, current_x))
-        end_point.append((current_y + 250, current_x + 250))
-        current_x += 250
-        if current_x + 250 > x:
-            current_x = 0
-            current_y += 250
-        list_img.append(img_crop)
+    # Process images
+    for image_name in image_names:
+        img2 = cv2.imread(image_name)
+        y, x, z = img2.shape
+        current_x = 0
+        current_y = 0
+        labels = ['HIGH', 'LOW', 'STROMA']
 
-    for a in range(len(list_img)):
+        # List of tiles
+        list_img = []
 
-        segment_name = f'{save_name}_segment_{a}.png'
+        # List of starting points of tiles
+        start_point = []
 
-        # Preprocessing
-        img_ori = list_img[a]
-        img = cv2.cvtColor(img_ori, cv2.COLOR_BGR2RGB)
+        # List of ending points of tiles
+        end_point = []
 
-        # Resize Image
-        img = cv2.resize(img, (image_size, image_size),
-                         interpolation=cv2.INTER_AREA)
+        # Used for counting image segments per class
+        high = 0
+        low = 0
+        stroma = 0
 
-        # Normalize image
-        img = img/255
-        img = img.reshape(1, img.shape[0], img.shape[1], 3)
+        # Colors for highlighting tiles after classification
+        scale = 0.7
+        high_highlight = np.array([255, 0, 0])[::-1]*scale
+        low_stroma_highlight = np.array([0, 0, 255])[::-1]*scale
 
-        predict = model.predict(img)
+        # Make directory structure for output
+        save_name = os.path.splitext(os.path.basename(image_name))[0]
+        image_path_no_prefix = os.path.splitext(image_name)[0]
+        if output_dir:
+            output_path = os.path.join(output_dir, f'{save_name}_results')
+        else:
+            output_path = os.path.join(f'{image_path_no_prefix}_results')
 
-        # Add high class bias
-        predict[0][0] -= bias_to_high_class
+        if os.path.exists(output_path):
+            if os.path.isdir(output_path):
+                shutil.rmtree(output_path)
+            else:
+                os.remove(output_path)
 
-        rect_for_blending = np.ones(img_ori.shape, dtype=np.uint8)
+        os.makedirs(output_path)
 
-        # Get predictions of tiles
-        # Return predictions of High
-        label = labels[predict.argmax()]
-        confidence = predict.max()
+        # Add class folders
+        os.makedirs(os.path.join(output_path, 'high'))
+        os.makedirs(os.path.join(output_path, 'low'))
+        os.makedirs(os.path.join(output_path, 'stroma'))
 
-        # Map confidence to exp scale so that the coloring differene is more
-        # drastic
-        confidence = (np.exp(confidence) - 1)/(np.e - 1)
+        # Cropping images into (250, 250) tiles
+        while current_x + 250 <= x and current_y + 250 <= y:
+            img_crop = img2[current_y:current_y + 250, current_x:current_x + 250]
+            start_point.append((current_y, current_x))
+            end_point.append((current_y + 250, current_x + 250))
+            current_x += 250
+            if current_x + 250 > x:
+                current_x = 0
+                current_y += 250
+            list_img.append(img_crop)
 
-        # Write image to disk
-        cv2.imwrite(os.path.join(output_path, label.lower(), segment_name),
-                    img_ori)
+        for a in range(len(list_img)):
 
-        if label == 'HIGH':
-            high += 1
-            rect_for_blending = (rect_for_blending*high_highlight*confidence
-                                 ).astype(np.uint8)
-            res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5, 1.0)
-            img_ori[:] = res
+            segment_name = f'{save_name}_segment_{a}.png'
 
-        # Return predictions of Low
-        elif label == 'LOW':
-            low += 1
-            rect_for_blending = (rect_for_blending*low_stroma_highlight*confidence
-                                 ).astype(np.uint8)
-            res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5, 1.0)
-            img_ori[:] = res
+            # Preprocessing
+            img_ori = list_img[a]
+            img = cv2.cvtColor(img_ori, cv2.COLOR_BGR2RGB)
 
-        # Return predictions of Stroma
-        elif label == 'STROMA':
-            stroma += 1
-            rect_for_blending = (rect_for_blending*low_stroma_highlight*confidence
-                                 ).astype(np.uint8)
-            res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5, 1.0)
-            img_ori[:] = res
+            # Resize Image
+            img = cv2.resize(img, (image_size, image_size),
+                             interpolation=cv2.INTER_AREA)
 
-        # Append prediction data to TSV
-        probabilities = predict[0].copy()
-        max_probability = int(max(predict[0])*100)
-        df = df.append(pd.DataFrame([[segment_name, max_probability, label,
-                                      probabilities[0], probabilities[1],
-                                      probabilities[2]]], columns=df.columns))
+            # Normalize image
+            img = img/255
+            img = img.reshape(1, img.shape[0], img.shape[1], 3)
 
-    # Show inference result
-    #  cv2.imshow("Inference Result", img2)
-    #  cv2.waitKey(0)
+            prediction = model.predict(img)
 
-    # Save the image
-    cv2.imwrite(os.path.join(output_path, f'{save_name}_result.png'), img2)
+            # Add high class bias
+            prediction[0][0] -= bias_to_high_class
+
+            rect_for_blending = np.ones(img_ori.shape, dtype=np.uint8)
+
+            # Get predictions of tiles
+            # Return predictions of High
+            label = labels[prediction.argmax()]
+            confidence = prediction.max()
+
+            # Map confidence to exp scale so that the coloring differene is
+            # more drastic
+            confidence = (np.exp(confidence) - 1)/(np.e - 1)
+
+            # Write image to disk
+            cv2.imwrite(os.path.join(output_path, label.lower(), segment_name),
+                        img_ori)
+
+            if label == 'HIGH':
+                high += 1
+                rect_for_blending = (rect_for_blending*high_highlight*confidence
+                                     ).astype(np.uint8)
+                res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5,
+                                      1.0)
+                img_ori[:] = res
+
+            # Return predictions of Low
+            elif label == 'LOW':
+                low += 1
+                rect_for_blending = (rect_for_blending*low_stroma_highlight*confidence
+                                     ).astype(np.uint8)
+                res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5,
+                                      1.0)
+                img_ori[:] = res
+
+            # Return predictions of Stroma
+            elif label == 'STROMA':
+                stroma += 1
+                rect_for_blending = (rect_for_blending*low_stroma_highlight*confidence
+                                     ).astype(np.uint8)
+                res = cv2.addWeighted(img_ori, 0.7, rect_for_blending, 0.5,
+                                      1.0)
+                img_ori[:] = res
+
+            # Append prediction data to TSV
+            probabilities = prediction[0].copy()
+            max_probability = int(max(prediction[0])*100)
+            df = df.append(pd.DataFrame([[segment_name, max_probability, label,
+                                          probabilities[0], probabilities[1],
+                                          probabilities[2]]],
+                                        columns=df.columns))
+
+        # Save the image
+        cv2.imwrite(os.path.join(output_path, f'{save_name}_result.png'), img2)
 
     # Save the TSV
-    df.to_csv(os.path.join(output_path, f'{save_name}_result.tsv'),
-              index=False, sep="\t")
+    if os.path.isdir(input_path):
+        df.to_csv(os.path.join(os.path.dirname(output_path), 'result.tsv'),
+                  index=False, sep="\t")
+    else:
+        df.to_csv(os.path.join(output_path, f'{save_name}_result.tsv'),
+                  index=False, sep="\t")
 
 
 if __name__ == '__main__':
@@ -198,13 +212,18 @@ if __name__ == '__main__':
     model_path = 'VGG19_CHTN_train_images_may_day.h5'
     model = load_model(model_path)
 
-    # Analyse single image (with custom output dir)
+    # 1. Analyse single image
+
     predict('/home/ldalton/test/ska.jpg', model, output_dir='./output')
 
-    # Can also be used with directory of images
-    #  dir_name = './sample_data'
+    # 2. Analyse directory of images, and save TSV results separately for each
+    # image
+    #  dir_name = '/home/ldalton/test'
     #  images = [os.path.join(dir_name, image_name) for image_name in
               #  os.listdir(dir_name)]
-
     #  for image_name in images:
-        #  predict(image_name, model)
+        #  predict(image_name, model, output_dir='./output')
+
+    # 3. Analyse directory of images, and save results of all images in a
+    # single TSV
+    #  predict('/home/ldalton/test', model, output_dir='./output')
