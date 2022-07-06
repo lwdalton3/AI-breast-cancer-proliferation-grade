@@ -213,8 +213,7 @@ if __name__ == '__main__':
     model = load_model(model_path)
 
     # 1. Analyse single image
-
-    predict('/home/ldalton/test/ska.jpg', model, output_dir='./output')
+    #  predict('/home/ldalton/test/ska.jpg', model, output_dir='./output')
 
     # 2. Analyse directory of images, and save TSV results separately for each
     # image
@@ -226,4 +225,4 @@ if __name__ == '__main__':
 
     # 3. Analyse directory of images, and save results of all images in a
     # single TSV
-    #  predict('/home/ldalton/test', model, output_dir='./output')
+    predict('/home/ldalton/test', model, output_dir='./output')
