@@ -24,8 +24,8 @@ except:
     pass
 
 
-def predict(input_path, model, bias_to_high_class=0, image_size=224,
-            output_dir=None):
+def predict(input_path, output_dir, model, bias_to_high_class=0,
+            image_size=224):
     """
     Predicts on a single image with name `image_name` and stores the results in
     a directory called `image_name_inference_result`.
@@ -94,24 +94,17 @@ def predict(input_path, model, bias_to_high_class=0, image_size=224,
 
         # Make directory structure for output
         save_name = os.path.splitext(os.path.basename(image_name))[0]
-        image_path_no_prefix = os.path.splitext(image_name)[0]
-        if output_dir:
-            output_path = os.path.join(output_dir, f'{save_name}_results')
-        else:
-            output_path = os.path.join(f'{image_path_no_prefix}_results')
 
-        if os.path.exists(output_path):
-            if os.path.isdir(output_path):
-                shutil.rmtree(output_path)
-            else:
-                os.remove(output_path)
-
-        os.makedirs(output_path)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
         # Add class folders
-        os.makedirs(os.path.join(output_path, 'high'))
-        os.makedirs(os.path.join(output_path, 'low'))
-        os.makedirs(os.path.join(output_path, 'stroma'))
+        if not os.path.exists(os.path.join(output_dir, 'high')):
+            os.makedirs(os.path.join(output_dir, 'high'))
+        if not os.path.exists(os.path.join(output_dir, 'low')):
+            os.makedirs(os.path.join(output_dir, 'low'))
+        if not os.path.exists(os.path.join(output_dir, 'stroma')):
+            os.makedirs(os.path.join(output_dir, 'stroma'))
 
         # Cropping images into (250, 250) tiles
         while current_x + 250 <= x and current_y + 250 <= y:
@@ -157,7 +150,7 @@ def predict(input_path, model, bias_to_high_class=0, image_size=224,
             confidence = (np.exp(confidence) - 1)/(np.e - 1)
 
             # Write image to disk
-            cv2.imwrite(os.path.join(output_path, label.lower(), segment_name),
+            cv2.imwrite(os.path.join(output_dir, label.lower(), segment_name),
                         img_ori)
 
             if label == 'HIGH':
@@ -195,14 +188,14 @@ def predict(input_path, model, bias_to_high_class=0, image_size=224,
                                         columns=df.columns))
 
         # Save the image
-        cv2.imwrite(os.path.join(output_path, f'{save_name}_result.png'), img2)
+        cv2.imwrite(os.path.join(output_dir, f'{save_name}_result.png'), img2)
 
     # Save the TSV
     if os.path.isdir(input_path):
-        df.to_csv(os.path.join(os.path.dirname(output_path), 'result.tsv'),
-                  index=False, sep="\t")
+        df.to_csv(os.path.join(output_dir, 'result.tsv'), index=False,
+                  sep="\t")
     else:
-        df.to_csv(os.path.join(output_path, f'{save_name}_result.tsv'),
+        df.to_csv(os.path.join(output_dir, f'{save_name}_result.tsv'),
                   index=False, sep="\t")
 
 
@@ -213,7 +206,7 @@ if __name__ == '__main__':
     model = load_model(model_path)
 
     # 1. Analyse single image
-    #  predict('/home/ldalton/test/ska.jpg', model, output_dir='./output')
+    #  predict('/home/ldalton/test/ska.jpg', './output', model)
 
     # 2. Analyse directory of images, and save TSV results separately for each
     # image
@@ -221,8 +214,8 @@ if __name__ == '__main__':
     #  images = [os.path.join(dir_name, image_name) for image_name in
               #  os.listdir(dir_name)]
     #  for image_name in images:
-        #  predict(image_name, model, output_dir='./output')
+        #  predict(image_name, './output', model)
 
     # 3. Analyse directory of images, and save results of all images in a
     # single TSV
-    predict('/home/ldalton/test', model, output_dir='./output')
+    predict('/home/ldalton/test', './output', model)
