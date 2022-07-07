@@ -89,8 +89,8 @@ def predict(input_path, output_dir, model, bias_to_high_class=0,
 
         # Colors for highlighting tiles after classification
         scale = 0.7
-        high_highlight = np.array([255, 0, 0])[::-1]*scale
-        low_stroma_highlight = np.array([0, 0, 255])[::-1]*scale
+        low_stroma_highlight = np.array([255, 0, 0])[::-1]*scale
+        high_highlight = np.array([0, 0, 255])[::-1]*scale
 
         # Make directory structure for output
         save_name = os.path.splitext(os.path.basename(image_name))[0]
@@ -144,6 +144,11 @@ def predict(input_path, output_dir, model, bias_to_high_class=0,
             # Return predictions of High
             label = labels[prediction.argmax()]
             confidence = prediction.max()
+
+            # If the confidence is low, we assume that it's a LOW
+            # classification
+            if confidence < 0.5:
+                label = 'LOW'
 
             # Map confidence to exp scale so that the coloring differene is
             # more drastic
